@@ -36,7 +36,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Gestor Financeiro</CardTitle>
+          <CardTitle className="text-2xl font-bold">DotEquilibrium</CardTitle>
           <CardDescription>Entre na sua conta</CardDescription>
         </CardHeader>
         <CardContent>

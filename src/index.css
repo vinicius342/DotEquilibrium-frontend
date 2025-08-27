@@ -115,3 +115,22 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom nav button styles */
+@layer components {
+  .nav-button-active {
+    @apply bg-blue-500 text-white;
+  }
+  
+  .nav-button-active:hover {
+    @apply bg-blue-600;
+  }
+  
+  .nav-button-inactive {
+    @apply text-gray-300;
+  }
+  
+  .nav-button-inactive:hover {
+    @apply bg-blue-500/20 text-blue-400;
+  }
+}
