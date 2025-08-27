@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import PublicRoute from '@/components/PublicRoute';
 
 const ResetSenha = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
   const [email, setEmail] = useState("");
   const [enviado, setEnviado] = useState(false);
 
@@ -77,4 +81,10 @@ const ResetSenha = () => {
   );
 };
 
-export default ResetSenha;
+export default function WrappedResetSenha() {
+  return (
+    <PublicRoute>
+      <ResetSenha />
+    </PublicRoute>
+  );
+}

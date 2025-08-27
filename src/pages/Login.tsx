@@ -1,21 +1,35 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import PublicRoute from '@/components/PublicRoute';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Login = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  // TODO
-  console.log("API URL:", apiUrl); // Apenas para verificação, remova em produção
+  const navigate = useNavigate();
+  const { login, isLoading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [localError, setLocalError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Lógica de login aqui
-    console.log("Login:", { email, senha });
+    setLocalError("");
+
+    if (!email || !senha) {
+      setLocalError("Por favor, preencha todos os campos");
+      return;
+    }
+
+    try {
+      await login({ email, password: senha });
+      navigate("/dashboard", { replace: true });
+    } catch (error: any) {
+      setLocalError(error.message || "Erro ao fazer login");
+    }
   };
 
   return (
@@ -26,6 +40,13 @@ const Login = () => {
           <CardDescription>Entre na sua conta</CardDescription>
         </CardHeader>
         <CardContent>
+          {(error || localError) && (
+            <Alert className="mb-4 border-destructive/50 text-destructive">
+              <AlertDescription>
+                {localError || error}
+              </AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -49,8 +70,8 @@ const Login = () => {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
-              Entrar
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
           <div className="mt-4 text-center space-y-2">
@@ -70,4 +91,10 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default function WrappedLogin() {
+  return (
+    <PublicRoute>
+      <Login />
+    </PublicRoute>
+  );
+}

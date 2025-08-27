@@ -61,7 +61,25 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Cores específicas do sistema financeiro baseadas no template
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--warning))',
+					foreground: 'hsl(var(--warning-foreground))'
+				},
+				info: {
+					DEFAULT: 'hsl(var(--info))',
+					foreground: 'hsl(var(--info-foreground))'
+				},
+				// Cores diretas do template para facilitar uso
+				expense: '#ef4444',     // Vermelho para despesas
+				income: '#10b981',      // Verde para receitas
+				investment: '#f59e0b',  // Amarelo para investimentos
+				balance: '#3b82f6'      // Azul para saldo
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "@/lib/register";
+import { useAuth } from "@/hooks/useAuth";
+import PublicRoute from '@/components/PublicRoute';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,15 +15,36 @@ const Cadastro = () => {
     senha: "",
     confirmarSenha: ""
   });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // keep logic inside PublicRoute
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
     if (formData.senha !== formData.confirmarSenha) {
-      alert("Senhas não coincidem");
+      setError("Senhas não coincidem");
       return;
     }
-    // Lógica de cadastro aqui
-    console.log("Cadastro:", formData);
+    setLoading(true);
+    try {
+      await registerUser({
+        email: formData.email,
+        password1: formData.senha,
+        password2: formData.confirmarSenha,
+      });
+      setSuccess("Cadastro realizado com sucesso! Redirecionando para login...");
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err: any) {
+      setError(err.message || "Erro ao cadastrar");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -35,6 +59,12 @@ const Cadastro = () => {
           <CardDescription>Cadastre-se no Gestor Financeiro</CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="mb-2 text-destructive text-sm text-center">{error}</div>
+          )}
+          {success && (
+            <div className="mb-2 text-success text-sm text-center">{success}</div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome Completo</Label>
@@ -79,8 +109,8 @@ const Cadastro = () => {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
-              Criar Conta
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Criando..." : "Criar Conta"}
             </Button>
           </form>
           <div className="mt-4 text-center">
@@ -97,4 +127,10 @@ const Cadastro = () => {
   );
 };
 
-export default Cadastro;
+export default function WrappedCadastro() {
+  return (
+    <PublicRoute>
+      <Cadastro />
+    </PublicRoute>
+  );
+}

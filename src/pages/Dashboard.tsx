@@ -1,8 +1,14 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
+  const { user, logout } = useAuth();
+
+  // Debug: confirm auth context reaches Dashboard
+  console.log('Dashboard: user from context =', user);
+
   const resumoFinanceiro = {
     saldoTotal: 15750.80,
     receitasMes: 8500.00,
@@ -22,21 +28,37 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Dashboard Financeiro</h1>
-          <nav className="flex gap-4">
-            <Link to="/receitas-despesas">
-              <Button variant="outline">Receitas & Despesas</Button>
-            </Link>
-            <Link to="/investimentos">
-              <Button variant="outline">Investimentos</Button>
-            </Link>
-            <Link to="/folha-pagamento">
-              <Button variant="outline">Folha de Pagamento</Button>
-            </Link>
-            <Link to="/objetivos">
-              <Button variant="outline">Objetivos</Button>
-            </Link>
-          </nav>
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard Financeiro</h1>
+            {user && (
+              <p className="text-muted-foreground mt-1">
+                Bem-vindo, {user.first_name || user.email}!
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-4">
+            <nav className="flex gap-4">
+              <Link to="/receitas-despesas">
+                <Button variant="outline">Receitas & Despesas</Button>
+              </Link>
+              <Link to="/investimentos">
+                <Button variant="outline">Investimentos</Button>
+              </Link>
+              <Link to="/folha-pagamento">
+                <Button variant="outline">Folha de Pagamento</Button>
+              </Link>
+              <Link to="/objetivos">
+                <Button variant="outline">Objetivos</Button>
+              </Link>
+            </nav>
+            <Button 
+              variant="destructive" 
+              onClick={logout}
+              size="sm"
+            >
+              Sair
+            </Button>
+          </div>
         </div>
 
         {/* Cards de Resumo */}
