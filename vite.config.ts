@@ -29,6 +29,13 @@ export default defineConfig(({ mode }) => {
       host: "::",
       port: 3000,
       https: httpsConfig || undefined,
+      proxy: {
+        // Proxy API calls para o backend Django
+        '/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
+        },
+      },
     },
     plugins: [
       react(),

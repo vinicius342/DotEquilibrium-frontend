@@ -29,7 +29,9 @@ const Header = () => {
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+                style={{ background: '#252c37'}}
+        >
             <div className="container mx-auto px-6 py-4">
                 <div className="flex justify-between items-center">
                     <div>
@@ -46,6 +48,7 @@ const Header = () => {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    data-header="true"
                                     className={`flex items-center gap-2 ${isActive("/dashboard")
                                         ? "bg-blue-500 text-white hover:bg-blue-600"
                                         : "text-gray-300 hover:bg-blue-500/20 hover:text-blue-400"
@@ -59,6 +62,7 @@ const Header = () => {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    data-header="true"
                                     className={`flex items-center gap-2 ${isActive("/receitas-despesas")
                                         ? "bg-blue-500 text-white hover:bg-blue-600"
                                         : "text-gray-300 hover:bg-blue-500/20 hover:text-blue-400"
@@ -72,6 +76,7 @@ const Header = () => {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    data-header="true"
                                     className={`flex items-center gap-2 ${isActive("/investimentos")
                                         ? "bg-blue-500 text-white hover:bg-blue-600"
                                         : "text-gray-300 hover:bg-blue-500/20 hover:text-blue-400"
@@ -85,6 +90,7 @@ const Header = () => {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    data-header="true"
                                     className={`flex items-center gap-2 ${isActive("/folha-pagamento")
                                         ? "bg-blue-500 text-white hover:bg-blue-600"
                                         : "text-gray-300 hover:bg-blue-500/20 hover:text-blue-400"
@@ -98,6 +104,7 @@ const Header = () => {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    data-header="true"
                                     className={`flex items-center gap-2 ${isActive("/objetivos")
                                         ? "bg-blue-500 text-white hover:bg-blue-600"
                                         : "text-gray-300 hover:bg-blue-500/20 hover:text-blue-400"
@@ -114,6 +121,7 @@ const Header = () => {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    data-header="true"
                                     className="flex items-center text-gray-300 hover:bg-blue-500/20 hover:text-blue-400 ml-2"
                                     style={{ borderRadius: 50 }}
                                     aria-label="Notificações"
@@ -124,6 +132,7 @@ const Header = () => {
                                     <Button
                                         variant="ghost"
                                         size="sm"
+                                        data-header="true"
                                         className="flex items-center gap-2 text-gray-300 hover:bg-blue-500/20 hover:text-blue-400"
                                         style={{ borderRadius: 50 }}
                                     >

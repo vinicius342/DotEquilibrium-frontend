@@ -133,4 +133,15 @@ All colors MUST be HSL.
   .nav-button-inactive:hover {
     @apply bg-blue-500/20 text-blue-400;
   }
+
+  /* Estilo global para botões das páginas (exceto header e tabs) */
+  button:not([data-header]):not([data-nav]):not(.nav-button-active):not(.nav-button-inactive):not([role="tab"]) {
+    @apply bg-muted text-foreground border border-muted hover:text-primary hover:border-primary hover:bg-muted transition-all duration-200;
+  }
+
+  /* Manter botões de delete com cor vermelha mas aplicar o hover style */
+  button:not([data-header]):not([data-nav]):not([role="tab"])[class*="text-red"] {
+    @apply bg-muted border border-muted hover:text-primary hover:border-primary hover:bg-muted transition-all duration-200;
+    color: #dc2626 !important;
+  }
 }

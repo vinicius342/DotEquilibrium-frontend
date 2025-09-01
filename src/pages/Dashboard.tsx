@@ -25,6 +25,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
+        <h2 className="text-3xl font-bold mb-1">Bem-vindo, {user?.email || 'usuário'}!</h2>
+        <p className="text-muted-foreground mb-8">Aqui você organiza e tem controle total da sua vida financeira.</p>
         {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
