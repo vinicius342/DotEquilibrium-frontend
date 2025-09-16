@@ -39,28 +39,6 @@ export interface Employee {
   termination_date?: string;
 }
 
-export interface Payroll {
-  id?: number;
-  employee: number;
-  employee_name?: string;
-  period_start: string;
-  period_end: string;
-  gross_amount: number;
-  deductions: number;
-  net_amount: number;
-  payment_date: string;
-}
-
-export interface AdvancePayment {
-  id?: number;
-  employee: number;
-  employee_name?: string;
-  date_given: string;
-  amount: number;
-  description: string;
-  linked_payroll?: number;
-}
-
 export interface PayrollPeriod {
   id?: number;
   name: string;
@@ -79,7 +57,7 @@ export interface PayrollPeriodItem {
   period: number;
   employee: number;
   employee_name?: string;
-  payment_type: 'salary' | 'daily' | 'weekly' | 'bonus' | 'extra' | 'other';
+  payment_type: 'salary' | 'daily' | 'weekly' | 'bonus' | 'extra' | 'advance' | 'other';
   payment_type_display?: string;
   amount: number;
   description: string;
@@ -87,6 +65,10 @@ export interface PayrollPeriodItem {
   is_processed: boolean;
   is_advance?: boolean;
   payment_date?: string;
+  // Campos adicionais para substituir Payroll
+  gross_amount?: number;
+  deductions?: number;
+  net_amount?: number;
 }
 
 export const payrollApi = {
@@ -105,38 +87,6 @@ export const payrollApi = {
     }),
   deleteEmployee: (id: number): Promise<void> =>
     apiRequest(`/api/payroll/employees/${id}/`, { method: 'DELETE' }),
-
-  // Payroll endpoints
-  getPayrolls: (): Promise<Payroll[]> => apiRequest('/api/payroll/payrolls/'),
-  getPayroll: (id: number): Promise<Payroll> => apiRequest(`/api/payroll/payrolls/${id}/`),
-  createPayroll: (data: Omit<Payroll, 'id'>): Promise<Payroll> =>
-    apiRequest('/api/payroll/payrolls/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  updatePayroll: (id: number, data: Partial<Payroll>): Promise<Payroll> =>
-    apiRequest(`/api/payroll/payrolls/${id}/`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-  deletePayroll: (id: number): Promise<void> =>
-    apiRequest(`/api/payroll/payrolls/${id}/`, { method: 'DELETE' }),
-
-  // AdvancePayment endpoints
-  getAdvancePayments: (): Promise<AdvancePayment[]> => apiRequest('/api/payroll/advance-payments/'),
-  getAdvancePayment: (id: number): Promise<AdvancePayment> => apiRequest(`/api/payroll/advance-payments/${id}/`),
-  createAdvancePayment: (data: Omit<AdvancePayment, 'id'>): Promise<AdvancePayment> =>
-    apiRequest('/api/payroll/advance-payments/', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  updateAdvancePayment: (id: number, data: Partial<AdvancePayment>): Promise<AdvancePayment> =>
-    apiRequest(`/api/payroll/advance-payments/${id}/`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-  deleteAdvancePayment: (id: number): Promise<void> =>
-    apiRequest(`/api/payroll/advance-payments/${id}/`, { method: 'DELETE' }),
 
   // PayrollPeriod endpoints
   getPayrollPeriods: (): Promise<PayrollPeriod[]> => apiRequest('/api/payroll/payroll-periods/'),

@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { payrollApi, Employee, Payroll, AdvancePayment, PayrollPeriod, PayrollPeriodItem } from '../services/payrollApi';
+import { payrollApi, Employee, PayrollPeriod, PayrollPeriodItem } from '../services/payrollApi';
 
 export const usePayrollData = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [payrolls, setPayrolls] = useState<Payroll[]>([]);
-  const [advancePayments, setAdvancePayments] = useState<AdvancePayment[]>([]);
   const [payrollPeriods, setPayrollPeriods] = useState<PayrollPeriod[]>([]);
   const [activePeriod, setActivePeriod] = useState<PayrollPeriod | null>(null);
   const [periodItems, setPeriodItems] = useState<PayrollPeriodItem[]>([]);
@@ -22,41 +20,7 @@ export const usePayrollData = () => {
     }
   };
 
-  const fetchPayrolls = async () => {
-    try {
-      const data = await payrollApi.getPayrolls();
-      // Adicionar o nome do funcionário nos payrolls
-      const payrollsWithEmployeeNames = data.map(payroll => {
-        const employee = employees.find(emp => emp.id === payroll.employee);
-        return {
-          ...payroll,
-          employee_name: employee?.name || 'Funcionário não encontrado'
-        };
-      });
-      setPayrolls(payrollsWithEmployeeNames);
-    } catch (err) {
-      console.error('Erro ao carregar folhas de pagamento:', err);
-      // Não definir erro aqui pois pode não ter folhas ainda
-    }
-  };
 
-  const fetchAdvancePayments = async () => {
-    try {
-      const data = await payrollApi.getAdvancePayments();
-      // Adicionar o nome do funcionário nos adiantamentos
-      const advancePaymentsWithEmployeeNames = data.map(advance => {
-        const employee = employees.find(emp => emp.id === advance.employee);
-        return {
-          ...advance,
-          employee_name: employee?.name || 'Funcionário não encontrado'
-        };
-      });
-      setAdvancePayments(advancePaymentsWithEmployeeNames);
-    } catch (err) {
-      console.error('Erro ao carregar adiantamentos:', err);
-      // Não definir erro aqui pois pode não ter adiantamentos ainda
-    }
-  };
 
   const fetchPayrollPeriods = async () => {
     try {
@@ -116,16 +80,16 @@ export const usePayrollData = () => {
     }
   };
 
-  // Fetch employees first, then payrolls and advance payments
+  // Carregar dados iniciais
   useEffect(() => {
     fetchAllData();
   }, []);
 
-  // Fetch payrolls and advance payments after employees are loaded
+  // Fetch employees first, then periods
   useEffect(() => {
     if (employees.length > 0) {
-      fetchPayrolls();
-      fetchAdvancePayments();
+      // Após carregar funcionários, não precisa fazer nada adicional
+      // Os dados dos períodos já são carregados no fetchAllData
     }
   }, [employees]);
 
@@ -173,94 +137,6 @@ export const usePayrollData = () => {
       setEmployees(prev => prev.filter(emp => emp.id !== id));
     } catch (err) {
       setError('Erro ao excluir funcionário');
-      throw err;
-    }
-  };
-
-  const createPayroll = async (payrollData: Omit<Payroll, 'id'>) => {
-    try {
-      const newPayroll = await payrollApi.createPayroll(payrollData);
-      const employee = employees.find(emp => emp.id === newPayroll.employee);
-      const payrollWithEmployeeName = {
-        ...newPayroll,
-        employee_name: employee?.name || 'Funcionário não encontrado'
-      };
-      setPayrolls(prev => [...prev, payrollWithEmployeeName]);
-      return newPayroll;
-    } catch (err) {
-      setError('Erro ao criar folha de pagamento');
-      throw err;
-    }
-  };
-
-  const updatePayroll = async (id: number, payrollData: Partial<Payroll>) => {
-    try {
-      const updatedPayroll = await payrollApi.updatePayroll(id, payrollData);
-      const employee = employees.find(emp => emp.id === updatedPayroll.employee);
-      const payrollWithEmployeeName = {
-        ...updatedPayroll,
-        employee_name: employee?.name || 'Funcionário não encontrado'
-      };
-      setPayrolls(prev => 
-        prev.map(payroll => payroll.id === id ? payrollWithEmployeeName : payroll)
-      );
-      return updatedPayroll;
-    } catch (err) {
-      setError('Erro ao atualizar folha de pagamento');
-      throw err;
-    }
-  };
-
-  const deletePayroll = async (id: number) => {
-    try {
-      await payrollApi.deletePayroll(id);
-      setPayrolls(prev => prev.filter(payroll => payroll.id !== id));
-    } catch (err) {
-      setError('Erro ao excluir folha de pagamento');
-      throw err;
-    }
-  };
-
-  const createAdvancePayment = async (advanceData: Omit<AdvancePayment, 'id'>) => {
-    try {
-      const newAdvance = await payrollApi.createAdvancePayment(advanceData);
-      const employee = employees.find(emp => emp.id === newAdvance.employee);
-      const advanceWithEmployeeName = {
-        ...newAdvance,
-        employee_name: employee?.name || 'Funcionário não encontrado'
-      };
-      setAdvancePayments(prev => [...prev, advanceWithEmployeeName]);
-      return newAdvance;
-    } catch (err) {
-      setError('Erro ao criar adiantamento');
-      throw err;
-    }
-  };
-
-  const updateAdvancePayment = async (id: number, advanceData: Partial<AdvancePayment>) => {
-    try {
-      const updatedAdvance = await payrollApi.updateAdvancePayment(id, advanceData);
-      const employee = employees.find(emp => emp.id === updatedAdvance.employee);
-      const advanceWithEmployeeName = {
-        ...updatedAdvance,
-        employee_name: employee?.name || 'Funcionário não encontrado'
-      };
-      setAdvancePayments(prev => 
-        prev.map(advance => advance.id === id ? advanceWithEmployeeName : advance)
-      );
-      return updatedAdvance;
-    } catch (err) {
-      setError('Erro ao atualizar adiantamento');
-      throw err;
-    }
-  };
-
-  const deleteAdvancePayment = async (id: number) => {
-    try {
-      await payrollApi.deleteAdvancePayment(id);
-      setAdvancePayments(prev => prev.filter(advance => advance.id !== id));
-    } catch (err) {
-      setError('Erro ao excluir adiantamento');
       throw err;
     }
   };
@@ -373,8 +249,6 @@ export const usePayrollData = () => {
 
   return {
     employees,
-    payrolls,
-    advancePayments,
     payrollPeriods,
     activePeriod,
     periodItems,
@@ -385,12 +259,6 @@ export const usePayrollData = () => {
     createEmployee,
     updateEmployee,
     deleteEmployee,
-    createPayroll,
-    updatePayroll,
-    deletePayroll,
-    createAdvancePayment,
-    updateAdvancePayment,
-    deleteAdvancePayment,
     createPayrollPeriod,
     updatePayrollPeriod,
     deletePayrollPeriod,

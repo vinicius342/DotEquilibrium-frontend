@@ -16,8 +16,6 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 const FolhaPagamento = () => {
   const {
     employees,
-    payrolls,
-    advancePayments,
     payrollPeriods,
     activePeriod,
     periodItems,
@@ -27,8 +25,6 @@ const FolhaPagamento = () => {
     createEmployee,
     updateEmployee,
     deleteEmployee,
-    createPayroll,
-    createAdvancePayment,
     createPayrollPeriod,
     updatePayrollPeriod,
     deletePayrollPeriod,
@@ -44,27 +40,6 @@ const FolhaPagamento = () => {
     role: "",
     salary: "",
     hiring_date: "",
-  });
-
-  const [novoPagamento, setNovoPagamento] = useState({
-    employee: "",
-    amount: "",
-    description: "",
-    payment_date: new Date().toISOString().split('T')[0],
-    is_paid: false,
-    payment_type: "salary", // salary, daily, weekly, bonus, extra
-  });
-
-  const [novoAdiantamento, setNovoAdiantamento] = useState({
-    employee: "",
-    date_given: "",
-    amount: "",
-    description: "",
-  });
-
-  const [folhaAtual, setFolhaAtual] = useState({
-    mes: new Date().getMonth() + 1,
-    ano: new Date().getFullYear(),
   });
 
   const [novoPeriodo, setNovoPeriodo] = useState({
@@ -87,8 +62,6 @@ const FolhaPagamento = () => {
     description: "",
   });
 
-  const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
-  const [modalAdiantamentoAberto, setModalAdiantamentoAberto] = useState(false);
   const [modalNovoFuncionarioAberto, setModalNovoFuncionarioAberto] = useState(false);
   const [modalEditarPeriodo, setModalEditarPeriodo] = useState(false);
   const [periodoEditando, setPeriodoEditando] = useState({
@@ -109,9 +82,13 @@ const FolhaPagamento = () => {
 
   // Estado para controlar funcionários expandidos
   const [funcionariosExpandidos, setFuncionariosExpandidos] = useState<Set<string>>(new Set());
-  
+
   // Estado para controlar funcionários expandidos nos períodos fechados
   const [funcionariosExpandidosFechados, setFuncionariosExpandidosFechados] = useState<{ [periodId: string]: Set<string> }>({});
+
+  // Filtros para períodos fechados
+  const [filtroMesFechado, setFiltroMesFechado] = useState<number | undefined>();
+  const [filtroAnoFechado, setFiltroAnoFechado] = useState<number | undefined>();
 
   // Função para alternar expansão do funcionário
   const toggleFuncionarioExpandido = (empId: string) => {
@@ -130,13 +107,13 @@ const FolhaPagamento = () => {
     if (!novosFuncionariosExpandidos[periodId]) {
       novosFuncionariosExpandidos[periodId] = new Set();
     }
-    
+
     if (novosFuncionariosExpandidos[periodId].has(empId)) {
       novosFuncionariosExpandidos[periodId].delete(empId);
     } else {
       novosFuncionariosExpandidos[periodId].add(empId);
     }
-    
+
     setFuncionariosExpandidosFechados(novosFuncionariosExpandidos);
   };
 
@@ -155,15 +132,6 @@ const FolhaPagamento = () => {
   const totalSalarios = employees
     .filter(emp => !emp.termination_date)
     .reduce((sum, emp) => sum + Number(emp.salary), 0);
-
-  const folhasDoMes = payrolls.filter(payroll => {
-    const payrollDate = new Date(payroll.period_start);
-    return payrollDate.getMonth() + 1 === folhaAtual.mes &&
-      payrollDate.getFullYear() === folhaAtual.ano;
-  });
-
-  const totalDescontos = folhasDoMes.reduce((sum, payroll) => sum + Number(payroll.deductions), 0);
-  const totalLiquido = folhasDoMes.reduce((sum, payroll) => sum + Number(payroll.net_amount), 0);
 
   // Estatísticas do período ativo - categorização correta
   // 1. Pagamentos processados: não são adiantamentos E foram processados
@@ -207,85 +175,6 @@ const FolhaPagamento = () => {
     } catch (error) {
       console.error('Erro ao adicionar funcionário:', error);
       alert("Erro ao adicionar funcionário. Verifique os dados e tente novamente.");
-    }
-  };
-
-  const handleSubmitPagamento = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!novoPagamento.employee || !novoPagamento.amount || !novoPagamento.payment_date) {
-      alert("Preencha todos os campos obrigatórios");
-      return;
-    }
-
-    try {
-      const amount = parseFloat(novoPagamento.amount);
-
-      // Se for marcado como pago, criar um registro de folha
-      if (novoPagamento.is_paid) {
-        await createPayroll({
-          employee: parseInt(novoPagamento.employee),
-          period_start: novoPagamento.payment_date, // Usa a mesma data para início
-          period_end: novoPagamento.payment_date,   // e fim do período
-          gross_amount: amount,
-          deductions: 0, // Sem descontos por padrão
-          net_amount: amount,
-          payment_date: novoPagamento.payment_date,
-        });
-      } else {
-        // Se não pago, criar como adiantamento/pendência
-        await createAdvancePayment({
-          employee: parseInt(novoPagamento.employee),
-          date_given: novoPagamento.payment_date,
-          amount: amount,
-          description: novoPagamento.description || `${novoPagamento.payment_type === 'daily' ? 'Diária' :
-            novoPagamento.payment_type === 'weekly' ? 'Semanal' :
-              novoPagamento.payment_type === 'bonus' ? 'Bônus' :
-                novoPagamento.payment_type === 'extra' ? 'Extra' : 'Salário'} - ${new Date(novoPagamento.payment_date).toLocaleDateString('pt-BR')}`,
-        });
-      }
-
-      setNovoPagamento({
-        employee: "",
-        amount: "",
-        description: "",
-        payment_date: new Date().toISOString().split('T')[0],
-        is_paid: false,
-        payment_type: "salary",
-      });
-
-      alert(novoPagamento.is_paid ? "Pagamento registrado e marcado como pago!" : "Pagamento registrado como pendente!");
-    } catch (error) {
-      console.error('Erro ao registrar pagamento:', error);
-      alert("Erro ao registrar pagamento. Verifique os dados e tente novamente.");
-    }
-  };
-
-  const handleSubmitAdiantamento = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!novoAdiantamento.employee || !novoAdiantamento.date_given || !novoAdiantamento.amount) {
-      alert("Preencha todos os campos obrigatórios");
-      return;
-    }
-
-    try {
-      await createAdvancePayment({
-        employee: parseInt(novoAdiantamento.employee),
-        date_given: novoAdiantamento.date_given,
-        amount: parseFloat(novoAdiantamento.amount),
-        description: novoAdiantamento.description,
-      });
-
-      setNovoAdiantamento({
-        employee: "",
-        date_given: "",
-        amount: "",
-        description: "",
-      });
-
-      alert("Adiantamento registrado com sucesso!");
-    } catch (error) {
-      console.error('Erro ao registrar adiantamento:', error);
-      alert("Erro ao registrar adiantamento. Verifique os dados e tente novamente.");
     }
   };
 
@@ -358,7 +247,6 @@ const FolhaPagamento = () => {
         is_advance: false, // Resetar mas não usar mais
       });
 
-      setModalPagamentoAberto(false);
       alert("Item adicionado ao período com sucesso!");
     } catch (error) {
       console.error('Erro ao adicionar item:', error);
@@ -393,7 +281,6 @@ const FolhaPagamento = () => {
         description: "",
       });
 
-      setModalAdiantamentoAberto(false);
       alert("Adiantamento registrado no período com sucesso!");
     } catch (error) {
       console.error('Erro ao registrar adiantamento:', error);
@@ -413,6 +300,11 @@ const FolhaPagamento = () => {
         alert("Erro ao fechar período. Tente novamente.");
       }
     }
+  };
+
+  const handlePeriodclosed = async (periodId: number) => {
+    let period = await fetchPeriodItems(periodId);
+    console.log('Período fechado:', period);
   };
 
   const handleRemoverItemPeriodo = async (id: number) => {
@@ -540,13 +432,10 @@ const FolhaPagamento = () => {
         </div>
 
         <Tabs defaultValue="periodo-ativo">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="periodo-ativo">Período Ativo</TabsTrigger>
             <TabsTrigger value="periodos-fechados">Períodos Fechados</TabsTrigger>
             <TabsTrigger value="funcionarios">Funcionários</TabsTrigger>
-            <TabsTrigger value="folhas">Folhas</TabsTrigger>
-            <TabsTrigger value="adiantamentos">Adiantamentos</TabsTrigger>
-            <TabsTrigger value="processar">Novo Pagamento</TabsTrigger>
           </TabsList>
 
           {/* Período Ativo */}
@@ -613,18 +502,18 @@ const FolhaPagamento = () => {
                       });
                       // Mostrar lista
                       const funcionariosComPagamento = Object.keys(itemsPorFuncionario);
-                      
+
                       if (funcionariosComPagamento.length === 0) {
                         return <div className="text-muted-foreground">Nenhum pagamento registrado neste período.</div>;
                       }
                       return funcionariosComPagamento.map(empId => {
                         const itens = itemsPorFuncionario[empId];
                         const funcionario = employees.find(e => e.id?.toString() === empId);
-                        const pagos = itens.filter(i => i.is_processed);
+                        const processados = itens.filter(i => i.is_processed);
                         const pendentes = itens.filter(i => !i.is_processed);
-                        const valorPago = pagos.reduce((sum, i) => sum + Number(i.amount), 0);
-                        const valorPendente = pendentes.reduce((sum, i) => sum + Number(i.amount), 0) - valorPago;
-                        const total = pendentes.reduce((sum, i) => sum + Number(i.amount), 0);
+                        const valorAdiantado = processados.reduce((sum, i) => sum + Number(i.amount), 0);
+                        const valorPendente = pendentes.reduce((sum, i) => sum + Number(i.amount), 0) - valorAdiantado;
+                        const total = pendentes.reduce((acc, i) => acc + Number(i.amount), 0);
                         return (
                           <div key={empId}>
                             <div className="flex items-center justify-between border rounded px-3 py-2">
@@ -634,9 +523,9 @@ const FolhaPagamento = () => {
                               </div>
                               <div className="flex items-center gap-3">
                                 <div className="text-right">
-                                  <span className="block font-semibold">Total: R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                  <span className="block text-green-600 text-xs">Pago: R$ {valorPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                  {valorPendente > 0 && (
+                                  <span className="block font-semibold">Ganho Total: R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  <span className="block text-green-600 text-xs">Adiantado: R$ {valorAdiantado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                  {valorPendente && (
                                     <span className="block text-orange-600 text-xs">Pendente: R$ {valorPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                   )}
                                 </div>
@@ -658,11 +547,11 @@ const FolhaPagamento = () => {
                                       <span className="font-medium">{item.description || 'Sem descrição'}</span>
                                       <span className="ml-2 text-xs text-gray-500">
                                         {item.payment_type === 'salary' ? 'Salário' :
-                                         item.payment_type === 'daily' ? 'Diária' :
-                                         item.payment_type === 'weekly' ? 'Semanal' :
-                                         item.payment_type === 'bonus' ? 'Bônus' :
-                                         item.payment_type === 'extra' ? 'Hora Extra' :
-                                         item.payment_type === 'other' ? 'Outros' : item.payment_type}
+                                          item.payment_type === 'daily' ? 'Diária' :
+                                            item.payment_type === 'weekly' ? 'Semanal' :
+                                              item.payment_type === 'bonus' ? 'Bônus' :
+                                                item.payment_type === 'extra' ? 'Hora Extra' :
+                                                  item.payment_type === 'other' ? 'Outros' : item.payment_type}
                                       </span>
                                       {item.is_advance && (
                                         <span className="ml-1 text-xs bg-orange-100 text-orange-800 px-1 rounded">Adiantamento</span>
@@ -876,164 +765,217 @@ const FolhaPagamento = () => {
                 <CardDescription>Visualizar períodos de pagamento já fechados</CardDescription>
               </CardHeader>
               <CardContent>
+                {/* Filtros de mês e ano */}
+                <div className="flex gap-4 mb-4">
+                  <Select value={filtroMesFechado?.toString() || 'todos'} onValueChange={v => setFiltroMesFechado(v === 'todos' ? undefined : Number(v))}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Mês" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {meses.map(m => (
+                        <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filtroAnoFechado?.toString() || 'todos'} onValueChange={v => setFiltroAnoFechado(v === 'todos' ? undefined : Number(v))}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue placeholder="Ano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {[...new Set(payrollPeriods.map(p => new Date(p.start_date).getFullYear()))].sort().map(ano => (
+                        <SelectItem key={ano} value={ano.toString()}>{ano}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-4">
-                  {payrollPeriods.filter(period => period.status === 'closed').map((period) => (
-                    <div key={period.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-semibold flex items-center gap-2">
-                            <StopCircle className="h-4 w-4 text-gray-500" />
-                            {period.name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(period.start_date).toLocaleDateString('pt-BR')} - {new Date(period.end_date).toLocaleDateString('pt-BR')}
-                          </p>
-                          {period.closed_at && (
-                            <p className="text-xs text-muted-foreground">
-                              Fechado em: {new Date(period.closed_at).toLocaleDateString('pt-BR')}
+                  {payrollPeriods.filter(period => {
+                    if (period.status !== 'closed') return false;
+                    const mes = new Date(period.start_date).getMonth() + 1;
+                    const ano = new Date(period.start_date).getFullYear();
+                    if (filtroMesFechado && mes !== filtroMesFechado) return false;
+                    if (filtroAnoFechado && ano !== filtroAnoFechado) return false;
+                    return true;
+                  }).map((period) => {
+                    // Carregar dados do período fechado se ainda não estiverem carregados
+                    if (!allPeriodItems[period.id!]) {
+                      fetchPeriodItems(period.id!);
+                    }
+                    // Estado de toggle para mostrar/ocultar lista de funcionários
+                    const listaAberta = !!funcionariosExpandidosFechados['__period__' + period.id];
+                    return (
+                      <div key={period.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold flex items-center gap-2">
+                                <StopCircle className="h-4 w-4 text-gray-500" />
+                                {period.name}
+                              </h3>
+                              <Badge variant="secondary">Fechado</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(period.start_date).toLocaleDateString('pt-BR')} - {new Date(period.end_date).toLocaleDateString('pt-BR')}
                             </p>
-                          )}
-                        </div>
-                        <Badge variant="secondary">Fechado</Badge>
-                      </div>
-
-                      {/* Resumo do período fechado */}
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        {(() => {
-                          const periodItemsForThisPeriod = allPeriodItems[period.id!] || [];
-                          const totalProcessed = periodItemsForThisPeriod
-                            .filter(item => item.is_processed)
-                            .reduce((sum, item) => sum + Number(item.amount), 0);
-                          const totalItems = periodItemsForThisPeriod.length;
-                          const uniqueEmployees = new Set(periodItemsForThisPeriod.map(item => item.employee)).size;
-
-                          return (
-                            <>
-                              <div className="text-center">
-                                <p className="text-muted-foreground">Total Pago</p>
-                                <p className="font-semibold text-green-600">
-                                  R$ {totalProcessed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-muted-foreground">Funcionários</p>
-                                <p className="font-semibold">{uniqueEmployees}</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-muted-foreground">Pagamentos</p>
-                                <p className="font-semibold">{totalItems}</p>
-                              </div>
-                            </>
-                          );
-                        })()}
-                      </div>
-
-                      {/* Botão para carregar detalhes do período fechado */}
-                      {!allPeriodItems[period.id!] && (
-                        <div className="mt-3">
+                            {period.closed_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Fechado em: {new Date(period.closed_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            )}
+                          </div>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => fetchPeriodItems(period.id!)}
+                            onClick={() => {
+                              setFuncionariosExpandidosFechados(prev => {
+                                const novo = { ...prev };
+                                const key = '__period__' + period.id;
+                                if (novo[key]) {
+                                  delete novo[key];
+                                } else {
+                                  novo[key] = new Set();
+                                }
+                                return novo;
+                              });
+                            }}
                           >
-                            Ver Detalhes
+                            {listaAberta ? 'Fechar lista' : 'Abrir lista'}
                           </Button>
                         </div>
-                      )}
 
-                      {/* Lista de funcionários com pagamentos do período fechado */}
-                      {allPeriodItems[period.id!] && allPeriodItems[period.id!].length > 0 && (
-                        <div className="mt-4 border-t pt-3">
-                          <h5 className="font-medium mb-2 text-sm">Funcionários do Período:</h5>
-                          <div className="space-y-2">
-                            {(() => {
-                              // Agrupar por funcionário
-                              const itemsPorFuncionario: { [key: string]: PayrollPeriodItem[] } = {};
-                              allPeriodItems[period.id!].forEach(item => {
-                                const empId = String(item.employee);
-                                if (!itemsPorFuncionario[empId]) itemsPorFuncionario[empId] = [];
-                                itemsPorFuncionario[empId].push(item);
-                              });
+                        {/* Resumo do período fechado */}
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          {(() => {
+                            const periodItemsForThisPeriod = allPeriodItems[period.id!] || [];
+                            const totalProcessed = periodItemsForThisPeriod
+                              .filter(item => item.is_processed)
+                              .reduce((sum, item) => sum + Number(item.amount), 0);
+                            const totalItems = periodItemsForThisPeriod.length;
+                            const uniqueEmployees = new Set(periodItemsForThisPeriod.map(item => item.employee)).size;
 
-                              return Object.keys(itemsPorFuncionario).map(empId => {
-                                const itens = itemsPorFuncionario[empId];
-                                const funcionario = employees.find(e => e.id?.toString() === empId);
-                                const total = itens.reduce((sum, i) => sum + Number(i.amount), 0);
-                                const pagos = itens.filter(i => i.is_processed);
-                                const pendentes = itens.filter(i => !i.is_processed);
-                                const valorPago = pagos.reduce((sum, i) => sum + Number(i.amount), 0);
-                                const valorPendente = pendentes.reduce((sum, i) => sum + Number(i.amount), 0);
-
-                                return (
-                                  <div key={empId}>
-                                    <div className="flex items-center justify-between border rounded px-3 py-2 text-sm">
-                                      <div className="flex-1">
-                                        <span className="font-medium">{funcionario ? funcionario.name : 'Funcionário #' + empId}</span>
-                                        <span className="ml-2 text-xs text-muted-foreground">{funcionario?.role}</span>
-                                      </div>
-                                      <div className="flex items-center gap-3">
-                                        <div className="text-right">
-                                          <span className="block font-semibold text-xs">Total: R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                          <span className="block text-green-600 text-xs">Pago: R$ {valorPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                          {valorPendente > 0 && (
-                                            <span className="block text-orange-600 text-xs">Pendente: R$ {valorPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                                          )}
-                                        </div>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => toggleFuncionarioExpandidoFechado(String(period.id), empId)}
-                                        >
-                                          {(funcionariosExpandidosFechados[String(period.id)] || new Set()).has(empId) ? 'Ocultar' : 'Ver Detalhes'}
-                                        </Button>
-                                      </div>
-                                    </div>
-                                    {(funcionariosExpandidosFechados[String(period.id)] || new Set()).has(empId) && (
-                                      <div className="mt-2 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
-                                        <h6 className="font-medium text-sm text-gray-700">Movimentações no Período:</h6>
-                                        {itens.map((item, index) => (
-                                          <div key={item.id || index} className="flex justify-between items-center py-1 text-sm">
-                                            <div>
-                                              <span className="font-medium">{item.description || 'Sem descrição'}</span>
-                                              <span className="ml-2 text-xs text-gray-500">
-                                                {item.payment_type === 'salary' ? 'Salário' :
-                                                 item.payment_type === 'daily' ? 'Diária' :
-                                                 item.payment_type === 'weekly' ? 'Semanal' :
-                                                 item.payment_type === 'bonus' ? 'Bônus' :
-                                                 item.payment_type === 'extra' ? 'Hora Extra' :
-                                                 item.payment_type === 'other' ? 'Outros' : item.payment_type}
-                                              </span>
-                                              {item.is_advance && (
-                                                <span className="ml-1 text-xs bg-orange-100 text-orange-800 px-1 rounded">Adiantamento</span>
-                                              )}
-                                            </div>
-                                            <div className="text-right">
-                                              <span className={`font-medium ${item.is_processed ? 'text-green-600' : 'text-orange-600'}`}>
-                                                R$ {Number(item.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                              </span>
-                                              <span className="block text-xs text-gray-500">
-                                                {item.is_processed ? 'Processado' : 'Pendente'}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              });
-                            })()}
-                          </div>
+                            return (
+                              <>
+                                <div className="text-center">
+                                  <p className="text-muted-foreground">Total Pago</p>
+                                  <p className="font-semibold text-green-600">
+                                    R$ {totalProcessed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </p>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-muted-foreground">Funcionários</p>
+                                  <p className="font-semibold">{uniqueEmployees}</p>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-muted-foreground">Movimentações</p>
+                                  <p className="font-semibold">{totalItems}</p>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
-                      )}
-                    </div>
-                  ))}
 
-                  {payrollPeriods.filter(period => period.status === 'closed').length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Nenhum período fechado encontrado
-                    </div>
-                  )}
+                        {/* Lista de funcionários com pagamentos do período fechado */}
+                        {listaAberta && allPeriodItems[period.id!] && allPeriodItems[period.id!].length > 0 && (
+                          <div className="mt-4 border-t pt-3">
+                            <h5 className="font-medium mb-2 text-sm">Funcionários do Período:</h5>
+                            <div className="space-y-2">
+                              {(() => {
+                                // Agrupar por funcionário
+                                const itemsPorFuncionario: { [key: string]: PayrollPeriodItem[] } = {};
+                                allPeriodItems[period.id!].forEach(item => {
+                                  const empId = String(item.employee);
+                                  if (!itemsPorFuncionario[empId]) itemsPorFuncionario[empId] = [];
+                                  itemsPorFuncionario[empId].push(item);
+                                });
+
+                                return Object.keys(itemsPorFuncionario).map(empId => {
+                                  const itens = itemsPorFuncionario[empId];
+                                  const funcionario = employees.find(e => e.id?.toString() === empId);
+                                  const processados = itens.filter(i => i.is_processed);
+                                  const pendentes = itens.filter(i => !i.is_processed);
+                                  const valorAdiantado = processados.reduce((sum, i) => sum + Number(i.amount), 0);
+                                  const valorPendente = pendentes.reduce((sum, i) => sum + Number(i.amount), 0) - valorAdiantado;
+                                  const total = pendentes.reduce((acc, i) => acc + Number(i.amount), 0);
+                                  return (
+                                    <div key={empId}>
+                                      <div className="flex items-center justify-between border rounded px-3 py-2">
+                                        <div className="flex-1">
+                                          <span className="font-medium">{funcionario ? funcionario.name : 'Funcionário #' + empId}</span>
+                                          <span className="ml-2 text-xs text-muted-foreground">{funcionario?.role}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                          <div className="text-right">
+                                            <span className="block font-semibold">Ganho Total: R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                            <span className="block text-green-600 text-xs">Adiantado: R$ {valorAdiantado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                            {valorPendente && (
+                                              <span className="block text-orange-600 text-xs">Pendente: R$ {valorPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                            )}
+                                          </div>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => toggleFuncionarioExpandidoFechado(String(period.id), empId)}
+                                          >
+                                            {(funcionariosExpandidosFechados[String(period.id)] || new Set()).has(empId) ? 'Ocultar' : 'Ver Detalhes'}
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      {(funcionariosExpandidosFechados[String(period.id)] || new Set()).has(empId) && (
+                                        <div className="mt-2 ml-4 space-y-1 border-l-2 border-gray-200 pl-4">
+                                          <h6 className="font-medium text-sm text-gray-700">Movimentações no Período:</h6>
+                                          {itens.map((item, index) => (
+                                            <div key={item.id || index} className="flex justify-between items-center py-1 text-sm">
+                                              <div>
+                                                <span className="font-medium">{item.description || 'Sem descrição'}</span>
+                                                <span className="ml-2 text-xs text-gray-500">
+                                                  {item.payment_type === 'salary' ? 'Salário' :
+                                                    item.payment_type === 'daily' ? 'Diária' :
+                                                      item.payment_type === 'weekly' ? 'Semanal' :
+                                                        item.payment_type === 'bonus' ? 'Bônus' :
+                                                          item.payment_type === 'extra' ? 'Hora Extra' :
+                                                            item.payment_type === 'other' ? 'Outros' : item.payment_type}
+                                                </span>
+                                                {item.is_advance && (
+                                                  <span className="ml-1 text-xs bg-orange-100 text-orange-800 px-1 rounded">Adiantamento</span>
+                                                )}
+                                              </div>
+                                              <div className="text-right">
+                                                <span className={`font-medium ${item.is_processed ? 'text-green-600' : 'text-orange-600'}`}>
+                                                  R$ {Number(item.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </span>
+                                                <span className="block text-xs text-gray-500">
+                                                  {item.is_processed ? 'Processado' : 'Pendente'}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {payrollPeriods.filter(period => {
+                    if (period.status !== 'closed') return false;
+                    const mes = new Date(period.start_date).getMonth() + 1;
+                    const ano = new Date(period.start_date).getFullYear();
+                    if (filtroMesFechado && mes !== filtroMesFechado) return false;
+                    if (filtroAnoFechado && ano !== filtroAnoFechado) return false;
+                    return true;
+                  }).length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Nenhum período fechado encontrado
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -1150,272 +1092,6 @@ const FolhaPagamento = () => {
                 </form>
               </DialogContent>
             </Dialog>
-          </TabsContent>
-
-          {/* Folhas de Pagamento */}
-          <TabsContent value="folhas">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Folhas de Pagamento</CardTitle>
-                    <CardDescription>Histórico de folhas processadas</CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Select value={folhaAtual.mes.toString()} onValueChange={(value) => setFolhaAtual({ ...folhaAtual, mes: parseInt(value) })}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {meses.map((mes) => (
-                          <SelectItem key={mes.value} value={mes.value.toString()}>{mes.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={folhaAtual.ano.toString()} onValueChange={(value) => setFolhaAtual({ ...folhaAtual, ano: parseInt(value) })}>
-                      <SelectTrigger className="w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2024">2024</SelectItem>
-                        <SelectItem value="2025">2025</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {folhasDoMes.map((folha) => (
-                    <div key={folha.id} className="flex justify-between items-center p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="font-medium">{folha.employee_name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Período: {new Date(folha.period_start).toLocaleDateString('pt-BR')} - {new Date(folha.period_end).toLocaleDateString('pt-BR')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Pagamento: {new Date(folha.payment_date).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <p className="text-sm text-muted-foreground">Bruto</p>
-                        <p className="font-semibold">R$ {Number(folha.gross_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        <p className="text-sm text-red-600">
-                          Descontos: R$ {Number(folha.deductions).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-sm font-medium text-green-600">
-                          Líquido: R$ {Number(folha.net_amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {folhasDoMes.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Nenhuma folha de pagamento encontrada para este período
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Adiantamentos */}
-          <TabsContent value="adiantamentos">
-            <Card>
-              <CardHeader>
-                <CardTitle>Adiantamentos</CardTitle>
-                <CardDescription>Histórico de adiantamentos concedidos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {advancePayments.map((advance) => (
-                    <div key={advance.id} className="flex justify-between items-center p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="font-medium">{advance.employee_name}</h3>
-                        <p className="text-sm text-muted-foreground">{advance.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Data: {new Date(advance.date_given).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Valor</p>
-                        <p className="font-semibold text-orange-600">
-                          R$ {Number(advance.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {advancePayments.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Nenhum adiantamento encontrado
-                    </div>
-                  )}
-                </div>
-
-                {/* Formulário para novo adiantamento */}
-                <div className="mt-8 border-t pt-6">
-                  <h4 className="font-medium mb-4">Registrar Novo Adiantamento</h4>
-                  <form onSubmit={handleSubmitAdiantamento} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="advance-employee">Funcionário *</Label>
-                        <Select value={novoAdiantamento.employee} onValueChange={(value) => setNovoAdiantamento({ ...novoAdiantamento, employee: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um funcionário" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {employees.filter(emp => !emp.termination_date).map((employee) => (
-                              <SelectItem key={employee.id} value={employee.id!.toString()}>
-                                {employee.name} - {employee.role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="advance-date">Data *</Label>
-                        <Input
-                          id="advance-date"
-                          type="date"
-                          value={novoAdiantamento.date_given}
-                          onChange={(e) => setNovoAdiantamento({ ...novoAdiantamento, date_given: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="advance-amount">Valor *</Label>
-                        <Input
-                          id="advance-amount"
-                          type="number"
-                          step="0.01"
-                          value={novoAdiantamento.amount}
-                          onChange={(e) => setNovoAdiantamento({ ...novoAdiantamento, amount: e.target.value })}
-                          placeholder="0,00"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="advance-description">Descrição</Label>
-                        <Input
-                          id="advance-description"
-                          value={novoAdiantamento.description}
-                          onChange={(e) => setNovoAdiantamento({ ...novoAdiantamento, description: e.target.value })}
-                          placeholder="Motivo do adiantamento"
-                        />
-                      </div>
-                    </div>
-
-                    <Button type="submit" className="w-full">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Registrar Adiantamento
-                    </Button>
-                  </form>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Processar Novo Pagamento */}
-          <TabsContent value="processar">
-            <Card>
-              <CardHeader>
-                <CardTitle>Novo Pagamento</CardTitle>
-                <CardDescription>
-                  Registre um pagamento para um funcionário. Pode ser diária, semanal, bônus ou salário mensal.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmitPagamento} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="payroll-employee">Funcionário *</Label>
-                    <Select value={novoPagamento.employee} onValueChange={(value) => setNovoPagamento({ ...novoPagamento, employee: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um funcionário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.filter(emp => !emp.termination_date).map((employee) => (
-                          <SelectItem key={employee.id} value={employee.id!.toString()}>
-                            {employee.name} - {employee.role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tipo-pagamento">Tipo de Pagamento</Label>
-                    <Select value={novoPagamento.payment_type} onValueChange={(value) => setNovoPagamento({ ...novoPagamento, payment_type: value as any })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Diária</SelectItem>
-                        <SelectItem value="weekly">Semanal</SelectItem>
-                        <SelectItem value="salary">Salário Mensal</SelectItem>
-                        <SelectItem value="bonus">Bônus</SelectItem>
-                        <SelectItem value="extra">Hora Extra</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="valor">Valor (R$) *</Label>
-                      <Input
-                        id="valor"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={novoPagamento.amount}
-                        onChange={(e) => setNovoPagamento({ ...novoPagamento, amount: e.target.value })}
-                        placeholder="0,00"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="data-pagamento">Data *</Label>
-                      <Input
-                        id="data-pagamento"
-                        type="date"
-                        value={novoPagamento.payment_date}
-                        onChange={(e) => setNovoPagamento({ ...novoPagamento, payment_date: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="descricao">Descrição</Label>
-                    <Input
-                      id="descricao"
-                      type="text"
-                      value={novoPagamento.description}
-                      onChange={(e) => setNovoPagamento({ ...novoPagamento, description: e.target.value })}
-                      placeholder="Descrição adicional (opcional)"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="is-paid"
-                      checked={novoPagamento.is_paid}
-                      onChange={(e) => setNovoPagamento({ ...novoPagamento, is_paid: e.target.checked })}
-                      className="rounded border-gray-300"
-                    />
-                    <Label htmlFor="is-paid" className="text-sm">
-                      Marcar como pago (se desmarcado, ficará como pendente)
-                    </Label>
-                  </div>
-
-                  <Button type="submit" className="w-full">
-                    <Users className="mr-2 h-4 w-4" />
-                    Registrar Pagamento
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
