@@ -72,20 +72,6 @@ const Header = () => {
                                     Carteira
                                 </Button>
                             </Link>
-                            <Link to="/investimentos">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    data-header="true"
-                                    className={`flex items-center gap-2 ${isActive("/investimentos")
-                                        ? "bg-blue-500 text-white hover:bg-blue-600"
-                                        : "text-gray-300 hover:bg-blue-500/20 hover:text-blue-400"
-                                        }`}
-                                >
-                                    <TrendingUp size={16} />
-                                    Investimentos
-                                </Button>
-                            </Link>
                             <Link to="/folha-pagamento">
                                 <Button
                                     variant="ghost"

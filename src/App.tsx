@@ -10,7 +10,6 @@ import Cadastro from "./pages/Cadastro";
 import ResetSenha from "./pages/ResetSenha";
 import Dashboard from "./pages/Dashboard";
 import ReceitasDespesas from "./pages/ReceitasDespesas";
-import Investimentos from "./pages/Investimentos";
 import FolhaPagamento from "./pages/FolhaPagamento";
 import Objetivos from "./pages/Objetivos";
 import NotFound from "./pages/NotFound";
@@ -32,7 +31,6 @@ const App = () => (
           <Route path="/reset-senha" element={<ResetSenha />} />
           <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/receitas-despesas" element={<RequireAuth><ReceitasDespesas /></RequireAuth>} />
-          <Route path="/investimentos" element={<RequireAuth><Investimentos /></RequireAuth>} />
           <Route path="/folha-pagamento" element={<RequireAuth><FolhaPagamento /></RequireAuth>} />
           <Route path="/objetivos" element={<RequireAuth><Objetivos /></RequireAuth>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
