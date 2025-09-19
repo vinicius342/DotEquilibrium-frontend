@@ -23,6 +23,26 @@ export interface ApiError {
   status: number;
 }
 
+export interface UserProfile {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  date_joined: string;
+  is_active: boolean;
+}
+
+export interface UpdateProfileData {
+  first_name: string;
+  last_name: string;
+}
+
+export interface ChangePasswordData {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
 class ApiService {
   private async request<T>(
     endpoint: string,
@@ -125,6 +145,25 @@ class ApiService {
 
   async getCurrentUser(): Promise<LoginResponse['user']> {
     return this.request<LoginResponse['user']>('/api/auth/user/');
+  }
+
+  // Perfil do usuário
+  async getUserProfile(): Promise<UserProfile> {
+    return this.request<UserProfile>('/api/accounts/profile/');
+  }
+
+  async updateUserProfile(data: UpdateProfileData): Promise<UserProfile> {
+    return this.request<UserProfile>('/api/accounts/profile/', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async changePassword(data: ChangePasswordData): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/api/accounts/change-password/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 }
 

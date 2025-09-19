@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import ReceitasDespesas from "./pages/ReceitasDespesas";
 import FolhaPagamento from "./pages/FolhaPagamento";
 import Objetivos from "./pages/Objetivos";
+import MeusDados from "./pages/MeusDados";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "@/components/RequireAuth";
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/receitas-despesas" element={<RequireAuth><ReceitasDespesas /></RequireAuth>} />
           <Route path="/folha-pagamento" element={<RequireAuth><FolhaPagamento /></RequireAuth>} />
           <Route path="/objetivos" element={<RequireAuth><Objetivos /></RequireAuth>} />
+          <Route path="/meus-dados" element={<RequireAuth><MeusDados /></RequireAuth>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

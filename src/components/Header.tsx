@@ -127,8 +127,10 @@ const Header = () => {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
                                     <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
-                                        <User size={16} />
-                                        Meus Dados
+                                        <Link to="/meus-dados" className="flex items-center gap-2 w-full">
+                                            <User size={16} />
+                                            Meus Dados
+                                        </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         className="flex items-center gap-2 cursor-pointer text-destructive hover:text-destructive"
